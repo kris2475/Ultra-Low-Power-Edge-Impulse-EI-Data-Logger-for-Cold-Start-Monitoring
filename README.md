@@ -4,7 +4,7 @@
 
 This project combines ultra-low-power system design, embedded sensing, and TinyML-ready data logging. It focuses on measuring and analysing the **Time-to-First-Measurement (TTFM)** of an ESP32-based node waking from deep sleep — a key performance parameter in energy-constrained IoT systems.
 
-Using the **XIAO ESP32-S3** (or a similar ESP32 variant), we build a standalone, battery-powered logger that periodically wakes, captures sensor readings (Lux, Temperature, Pressure), measures the time required to produce that reading after wakeup, and stores the result in a dataset suitable for Edge Impulse (EI) or other ML pipelines.
+Using the **XIAO ESP32-S3** (or a similar ESP32 variant), we build a standalone, battery-powered logger that periodically wakes, captures sensor readings (Lux, Temperature, Pressure), measures the time required to produce that reading after wake-up, and stores the result in a dataset suitable for Edge Impulse (EI) or other ML pipelines.
 
 The goal is to determine if environmental factors (like temperature) have a measurable, non-linear impact on the chip's cold-start performance.
 
@@ -24,7 +24,7 @@ Create an **ultra-low-power data logging node** that:
 
 ## 🛠️ Technical Details & Wiring Connections
 
-This setup uses two primary I2C sensors (BH1750 and BMP180) wired to a single I2C bus on the XIAO ESP32-S3. The specific I2C pins used in the accompanying code (`sensors_read_debug.ino`) are defined below.
+This set-up uses two primary I2C sensors (BH1750 and BMP180) wired to a single I2C bus on the XIAO ESP32-S3. The specific I2C pins used in the accompanying code (`sensors_read_debug.ino`) are defined below.
 
 | Component | Function | I2C Address | XIAO ESP32-S3 Pin | Code Definition |
 | :--- | :--- | :--- | :--- | :--- |
@@ -47,9 +47,9 @@ Connect the VCC and GND of both the BH1750 and BMP180 to the 3.3V and GND pins o
 
 ## ⚙️ Implementation Steps
 
-### 1. Ultra-Low-Power Wakeup Module (C++ / Arduino)
+### 1. Ultra-Low-Power Wake-up Module (C++ / Arduino)
 
-* The core of the firmware (`ULP_EI_TTFM_Logger.ino`) implements a **deep-sleep → wake → measure → log → sleep** state machine.
+* The core of the firmware (`ULP_EI_TTFM_Logger.ino`) implements a **deep-sleep → wake-up → measure → log → sleep** state machine.
 
 * The wake source is the **RTC timer** (`esp_sleep_enable_timer_wakeup`).
 
@@ -100,6 +100,16 @@ The relationship between Temperature ($T$) and TTFM ($\text{TTFM}$) can be accur
 $$\text{TTFM} (\mu\text{s}) \approx -13.50 \times T (^{\circ}\mathrm{C}) + 35605$$
 
 **Rate of Change:** The TTFM increases by approximately $\mathbf{13.50\ \mu\text{s}}$ for every $\mathbf{1^{\circ}\mathrm{C}}$ decrease in temperature.
+
+### Why the Data Appears Stepped (Granularity)
+
+While temperature is a continuous variable, the plot shows the TTFM data points clustered into horizontal "steps" rather than following a perfectly smooth line. This is due to the combined effect of sensor hardware and software timing resolution:
+
+1.  **Dominant Fixed Hardware Delay:** The BH1750 Lux sensor's required $\mathbf{180\text{ ms}}$ integration time ($\approx \mathbf{180,000 \ \mu\text{s}}$) forms a massive, fixed baseline for the total TTFM. The small, cold-dependent changes in the ESP32's start-up time only slightly perturb this large value.
+
+2.  **Integer Timing Resolution (Quantisation):** The TTFM is measured using the `esp_timer_get_time()` function, which returns an **integer count** in microseconds ($\mu\text{s}$). It cannot measure fractions of a microsecond.
+
+**The Stepping Effect:** As the temperature drops, the linear increase in start-up time is gradual, but the measured TTFM can only report the next whole microsecond. Consequently, many successive temperature readings share the exact same TTFM value until the accumulated cold-start delay is large enough to push the *total* measured time over the threshold to the next available integer microsecond. This results in the clear stepped pattern observed in the scatter plot.
 
 ### Resolution of Hypothesis
 
