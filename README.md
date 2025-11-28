@@ -70,14 +70,12 @@ On each wake cycle:
 Timestamp_ms, Lux_Value, Temperature_C, Pressure_Pa, TTFM_us
 
 5. **Re-enter Deep Sleep:** Program the next wake time and call `esp_deep_sleep_start()`.
-
 ### 3. Safety/Boot Feature (ESP32-S3 Specific)
 
 Due to the sensitive nature of the ESP32-S3's native USB port during deep sleep, a **SAFE BOOT** feature is implemented:
 
-* After a fresh flash (or a cold boot/power-on), the device remains awake and prints a message.
-
-* Deep Sleep is disabled until the user manually sends the character **`C`** via the Serial Monitor. This prevents the logger from becoming unreachable if errors occur during initialization.
+* **Behavior when connected to PC via USB-C:** After a fresh flash, the device remains awake, waiting for the character **`C`** via the Serial Monitor. This prevents the logger from entering Deep Sleep immediately and becoming unreachable for debugging/re-flashing.
+* **Behavior when powered by Battery/Power Pack:** If no USB-C connection is active, the device **automatically bypasses** the wait and initiates the first Deep Sleep cycle immediately after `setup()` completes.
 
 ---
 
