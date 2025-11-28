@@ -1,7 +1,5 @@
 # Ultra-Low-Power Edge Impulse (EI) Data Logger for Cold-Start Monitoring
 
-*A low-budget, pre-Christmas embedded ML project*
-
 ## 💡 Overview
 
 This project combines ultra-low-power system design, embedded sensing, and TinyML-ready data logging. It focuses on measuring and analysing the **Time-to-First-Measurement (TTFM)** of an ESP32-based node waking from deep sleep — a key performance parameter in energy-constrained IoT systems.
@@ -24,15 +22,28 @@ Create an **ultra-low-power data logging node** that:
 
 * Operates on a small **LiPo battery** with minimal power consumption.
 
-## 🛠️ Technical Details & Budget
+## 🛠️ Technical Details & Wiring Connections
 
-| Area | Detail | Cost Estimate |
-| :---- | :---- | :---- |
-| **Microcontroller** | XIAO ESP32S3 (specifically used in this project) or standard ESP32-S3 dev board | ≈ £10–£15 (likely already owned) |
-| **Sensors Used** | **BH1750** (Lux) and **BMP180** (Temperature/Pressure) | ≈ £0–£5 |
-| **Storage** | microSD Card (SPI interface) for long-term logging | ≈ £0–£5 |
-| **Power** | Single LiPo cell | ≈ £5 |
-| **Total** | **Potentially < £20** using existing hardware | |
+This setup uses two primary I2C sensors (BH1750 and BMP180) wired to a single I2C bus on the XIAO ESP32-S3. The specific I2C pins used in the accompanying code (`sensors_read_debug.ino`) are defined below.
+
+| Component | Function | I2C Address | XIAO ESP32-S3 Pin | Code Definition |
+| :--- | :--- | :--- | :--- | :--- |
+| **XIAO ESP32-S3** | Microcontroller/RTC | N/A | N/A | N/A |
+| **BH1750 (Lux)** | Light Sensor | `0x23` | D43 (SDA) / D44 (SCL) | `#define SDA_PIN 43` |
+| **BMP180** | Temp/Pressure Sensor | `0x77` | D43 (SDA) / D44 (SCL) | `#define SCL_PIN 44` |
+| **Storage** | MicroSD Card | SPI (Optional) | N/A | N/A |
+| **Power** | 3.7V LiPo Battery | N/A | JST Connector | N/A |
+
+### Wiring Diagram
+
+Connect the VCC and GND of both the BH1750 and BMP180 to the 3.3V and GND pins of the XIAO. The I2C data lines should be connected as follows:
+
+| Sensor Pin | XIAO ESP32-S3 Pin |
+| :--- | :--- |
+| **SDA** (Data) | **D43** (GPIO 43) |
+| **SCL** (Clock) | **D44** (GPIO 44) |
+
+---
 
 ## ⚙️ Implementation Steps
 
